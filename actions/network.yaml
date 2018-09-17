@@ -1,0 +1,8 @@
+---
+- hosts: switches
+  tasks:
+    - name: Generate switch configs
+      connection: local
+      template:
+        src: 'switch/{{ ostype-config-template}}'
+        dest: 'files/{{ inventory_hostname }}'
