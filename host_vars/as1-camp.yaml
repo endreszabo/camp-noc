@@ -1,0 +1,26 @@
+mgmt_addr_offset: 2
+model: c3750
+site_id: 0
+port_prefix: Fa1/
+links:
+  - dir: up
+    to: core0-camp
+    ports:
+      - ['fa1/0/47', 'fa1/0/48']
+      - ['fa0/7', 'fa0/8']
+    channel_group: 10
+  - dir: down
+    to: fixme0-camp
+    ports:
+      - ['fa1/0/45', 'fa1/0/48']
+      - ['fa1/0/45', 'fa1/0/48']
+    channel_group: 20
+ports:
+  camper:
+    - [1,39]
+  voip:
+    - [40,40]
+  uap:
+    - [41,44]
+tags:
+  - access

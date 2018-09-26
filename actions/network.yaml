@@ -1,8 +1,9 @@
 ---
 - hosts: switches
+  gather_facts: False
   tasks:
-    - name: Generate switch configs
+    - name: "Generate switch cofigs"
       connection: local
       template:
-        src: 'switch/{{ ostype-config-template}}'
+        src: 'switch/{{ ostype}}-config-template'
         dest: 'files/{{ inventory_hostname }}'

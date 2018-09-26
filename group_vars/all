@@ -1,0 +1,5 @@
+base_network_address: 44.128.0.0
+base_network_size_multiplier: 1
+servers:
+    ntp1: "44.128.255.255"
+
