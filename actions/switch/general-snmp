@@ -1,0 +1,33 @@
+! --BEGIN SNMP--
+! ACL for SNMP
+{% if snmp.mgmt_networks.subnet_v4 is defined %}
+no ip access-list standard 61
+ip access-list standard 61
+{% for subnet in snmp.mgmt_networks.subnet_v4 %}
+ permit {{ subnet | ipaddr('network') }} {{ ( 2**32 - 1 - subnet | ipaddr('netmask') | ipaddr('int') ) | ipaddr }}
+{% endfor %}
+ deny any log
+{% endif %}
+! SNMP poll config
+{% if snmp.mgmt_networks is defined %}
+snmp-server community {{ snmp.community.ro }} ro 61
+{% else %}
+snmp-server community {{ snmp.community.ro }} ro
+{% endif %}
+{% if snmp.mgmt_networks is defined %}
+snmp-server community {{ snmp.community.rw }} rw 61
+{% else %}
+snmp-server community {{ snmp.community.rw }} rw
+{% endif %}
+snmp-server location {{ snmp.location }}
+snmp-server contact {{ snmp.contact }}
+snmp-server ifindex persist
+snmp ifmib ifindex persist
+! SNMP push config
+{% if snmp.trap is defined %}
+{% for trap in snmp.trap %}
+snmp-server host {{trap.dest}} traps version {{trap.version | default('2c') }} {{trap.community | default ('trap') }} {{trap.traps | default('') | join(' ') }}
+{% endfor %}
+{% endif %}
+! --END SNMP--
+

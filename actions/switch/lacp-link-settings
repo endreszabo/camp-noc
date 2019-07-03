@@ -1,0 +1,12 @@
+!! --BEGIN LINK INTERFACE--
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport nonegotiate
+ switchport trunk allowed vlan {{ vlans | json_query('*.id') | select('ne', vlans['dummy'].id) | join (',')}}
+ switchport trunk native vlan {{ vlans['dummy'].id }}
+{% if link.dir == "up" %}
+ ip arp inspection trust
+ ip dhcp snooping trust
+{% endif %}
+!! --END LINK INTERFACE--
+

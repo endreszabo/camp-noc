@@ -1,0 +1,20 @@
+mgmt_addr_offset: 2
+model: c3750
+site_id: 0
+links:
+  - dir: up
+    to: cs0-klapka
+    ports:
+      - Fa1/0/47-48
+    channel_group: 10
+ports:
+  access:
+    camper:
+      ranges:
+        - Fa1/0/1-39
+  voice:
+    ranges:
+      - Fa1/0/40-41
+  wifi:
+    ranges:
+      - Fa1/0/42-44

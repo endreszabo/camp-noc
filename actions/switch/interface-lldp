@@ -1,0 +1,5 @@
+{% if flags is defined and "lldp" in flags %}
+ lldp transmit
+ lldp receive
+{% endif %}
+

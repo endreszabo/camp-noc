@@ -1,0 +1,42 @@
+ostype: ios
+snmp:
+  mgmt_networks:
+    subnet_v4:
+      - 44.128.0.0/16
+  trap:
+    - dest: 44.128.1.1
+      version: 2c
+      community: example
+      traps:
+        - config
+        - tty
+    - dest: 44.128.1.2
+      version: 2c
+      community: all
+users:
+  szaboe:
+    privilege: 15
+    password_md5: $1$yyFn$wR0XhTv4yteuEIKmfiBxY.
+    password_sha256: TZZOy9jJGPFh/EzlX9iaw14uBrLGWyH.WxhUuJ8nR0Y
+    ssh_fingerprints:
+      - key-hash ssh-rsa 5C0626D3783D19C303D3259F9A3F4580
+switches:
+  fixed_speed_lacp_links: 0
+  session_exec_timeouts: false
+ip:
+  gateway: 44.128.255.255
+ports:
+  voice:
+    access_vlan: camper
+  wifi:
+    tagged_vlans:
+      - camper
+    native_vlan: wifi_mgmt
+acl:
+  camper:
+    type: extended
+    list_v4:
+      - permit ip  44.128.0.0 255.255.0.0 any
+      - permit udp any                    any eq 67
+      - deny   ip  any                    any log-input
+

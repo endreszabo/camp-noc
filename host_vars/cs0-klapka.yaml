@@ -1,0 +1,33 @@
+mgmt_addr_offset: 1
+model: c3550
+site_id: 0
+links:
+  - dir: down
+    to: as0-klapka
+    ports:
+      - Fa0/19-20
+    channel_group: 20
+  - dir: down
+    to: as0-guyon
+    ports:
+      - Fa0/21-22
+    channel_group: 21
+  - dir: down
+    to: as0-field
+    ports:
+      - Fa0/23
+  - dir: up
+    to: rgw0-klapka
+    ports:
+      - Gi0/1
+ports:
+  access:
+    camper:
+      ranges:
+        - Fa0/1-12
+  voice:
+    ranges:
+      - Fa0/15-16
+  wifi:
+    ranges:
+      - Fa0/17-18

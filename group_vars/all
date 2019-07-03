@@ -1,5 +1,42 @@
+snmp:
+  community:
+    ro: foobar
+    rw: null
+  contact: Camp++ NOC
+  location: Camp++
 base_network_address: 44.128.0.0
 base_network_size_multiplier: 1
-servers:
-    ntp1: "44.128.255.255"
-
+ip:
+  dns:
+    - 44.128.255.255
+    - 44.128.255.254
+  domain: camp.hsbp.org
+  ntp:
+    - 44.128.255.255
+    - 44.128.255.254
+  log:
+    - 44.128.255.255
+    - 44.128.255.254
+admin_networks:
+  subnet_v4:
+    - 44.128.0.0/16
+vlans:
+  camper:
+    id: 1000
+    subnet_v4: 10.13.37.0/24
+  havoc:
+    id: 1064
+    subnet_v4: 10.13.38.0/28
+  wifi_mgmt:
+    id: 1240
+    subnet_v4: 44.128.67.192/28
+  switch_mgmt:
+    id: 1244
+    subnet_v4: 44.128.67.208/28
+  ipphones:
+    id: 1224
+    subnet_v4: 44.128.67.176/28
+  uplink:
+    id: 1254
+  dummy:
+    id: 99

@@ -1,0 +1,9 @@
+! --BEGIN VLAN--
+vtp mode transparent
+{% for vlan in vlans  %}
+vlan {{ vlans[vlan].id }}
+ name {{ vlan }}
+{% endfor %}
+exit
+! --END VLAN--
+

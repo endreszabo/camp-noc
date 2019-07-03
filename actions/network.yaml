@@ -2,6 +2,9 @@
 - hosts: switches
   gather_facts: False
   tasks:
+    - name: "Include vars"
+      include_vars:
+        dir: vars
     - name: "Generate switch cofigs"
       connection: local
       template:

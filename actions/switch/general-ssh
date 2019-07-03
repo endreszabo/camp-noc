@@ -1,0 +1,23 @@
+! --BEGIN SSH--
+ip ssh version 2
+{% if admin_networks.subnet_v4 is defined %}
+no ip access-list standard 22
+ip access-list standard 22
+{% for subnet in admin_networks.subnet_v4 %}
+ permit {{ subnet | ipaddr('network') }} {{ ( 2**32 - 1 - subnet | ipaddr('netmask') | ipaddr('int') ) | ipaddr }}
+{% endfor %}
+ deny any log
+{% endif %}
+{% if flags is defined and "ssh_user_keys" in flags %}
+{% for user in users %}
+ip ssh pubkey-chain
+{% if users[user].ssh_fingerprints is defined %}
+  username szaboe
+{% for fpr in users[user].ssh_fingerprints %}
+    {{ fpr }}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endif %}
+! --END SSH--
+

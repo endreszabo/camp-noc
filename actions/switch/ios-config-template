@@ -1,44 +1,48 @@
-{{mgmt_addr_offset}}
-
+!!! {{inventory_hostname }}
+!!! {{ansible_managed}}
+!!!
+{% set comma = joiner(",") %}
 no service pad
 service tcp-keepalives-in
 service tcp-keepalives-out
 service timestamps debug datetime msec localtime show-timezone
 service timestamps log datetime msec localtime show-timezone
 service password-encryption
-
 hostname {{ inventory_hostname }} 
-
 no aaa new-model
-
-enable secret 0 {{ secrets.enable }} 
-
+{# ! enable secret 0 {{ secrets.enable }}  #}
+no logging console
 {% for user in users %}
-username {{user}} privilege {{users[user].privilege}} secret 5 {{ users[user].password }}
+{% if flags is defined and "sha256shadow" in flags %}
+username {{user}} privilege {{users[user].privilege}} secret 4 {{ users[user].password_sha256 }}
+{% else %}
+username {{user}} privilege {{users[user].privilege}} secret 5 {{ users[user].password_md5 }}
+{% endif %}
 {%- endfor %}
-
+!
 no ip source-route
 no ip routing
-{% if "C3560" not in model %}no ipv6 unicast-routing{% endif %}
-ip ssh version 2
-{% if "C3560" not in model -%}lldp run{%- endif %}
-cdp run
-
 no ip domain-lookup
-ip domain-name emf.camp
-
-vtp mode transparent
-
-{% for vlan in vlans  %}
-vlan {{ vlans[vlan].id }}
- name {{ vlan }}
-{% endfor %}
-exit
-
-{% if 'access' in tags %}
+!
+login on-failure log
+login on-success log
+!
+{% if flags is defined and "ipv6" in flags %}
+no ipv6 unicast-routing
+{% endif %}
+!
+{% if flags is defined and "lldp" in flags %}
+lldp run
+{% endif %}
+!
+cdp run
+!
+{% include 'general-vlan' with context %}
+!
+{% if 'camper' in ports %}
 ! Only perform DHCP snooping if this switch supports campers
 {% if "C2950" not in model -%}
-ip dhcp snooping vlan {{ vlans['CAMPERS'].id }}
+ip dhcp snooping vlan {{ vlans['camper'].id }}
 ip dhcp snooping information option format remote-id hostname
 {% else %}
 {# C2950 changed go here #}
@@ -46,281 +50,180 @@ ip dhcp snooping information option format remote-id hostname
 {% endif %}
 ip dhcp snooping
 ip device tracking
-ip arp inspection vlan {{ vlans['CAMPERS'].id }}
+ip arp inspection vlan {{ vlans['camper'].id }}
 ip arp inspection validate src-mac dst-mac ip
 {% endif %}
-
+!
 errdisable recovery cause all
 errdisable recovery interval 120
-
-spanning-tree mode pvst
-spanning-tree extend system-id
-
-! wrong from lst year?
-!ip default-gateway 94.45.255.129
-ip default-gateway 151.216.132.1
-interface vlan{{ vlans['SWITCH_MGMT'].id }}
-{% set bn = "%d/%d" | format( mgmt_addr_offset + base_network_address | ipaddr('address') | ipaddr('int') + vlans['SWITCH_MGMT'].subnet_offset*(base_network_size_multiplier*4*4), 32-vlans['SWITCH_MGMT'].subnet_size) %}
-ip address {{ bn | ipaddr('address') }} {{ bn | ipaddr('netmask') }}
- no ip redirects
- no ip proxy-arp
- no ip route-cache
-
-{% for port in ports.camper %}
-{% for port in range(port[0]+1, port[1]+1) %}
-interface {{ port_prefix }}{{ port }}
- description CAMPER port
+!
+file prompt quiet
+!
+{% include 'general-stp' with context %}
+{% include 'general-ip' with context %}
+!
+{% for vlan in ports.access %}
+!
+! {{vlan}} access ports
+!
+{% for range in ports.access[vlan].ranges %}
+default interface range {{ range }}
+interface range {{ range }}
+ description {{ vlan }} access
  switchport mode access
- switchport access vlan {{ vlans['CAMPERS'].id }}
- switchport nonegotiate
- switchport block unicast
- ip access-group camper_v4_in in
-{% if "C3560" not in model %} ipv6 traffic-filter camper_v6_in in{% endif %}
-{% if "C3560" in model %} 
- small-frame violation-rate 1000
-{% else %}
-{# yes this is twice; some switches have different syntax #}
- small-frame violation rate 1000
-{% endif %}
- storm-control broadcast level 5.00 4.00
- storm-control multicast level 50.00 40.00
- storm-control action shutdown
- no vtp
-{% if "C3560" not in model %}
- lldp transmit
- lldp receive
-{% endif %}
- no cdp enable
+ switchport access vlan {{ vlans[vlan].id }}
+ power inline never
+{% include 'interface-lldp' with context %}
+{% include 'interface-security' with context %}
  spanning-tree portfast
- spanning-tree bpdufilter disable
- spanning-tree bpduguard enable
- ip verify source
- switchport port-security
- switchport port-security maximum 64
- switchport port-security aging time 1
- switchport port-security aging type inactivity
- load-interval 30
- no shutdown
-{% endfor %}
-{% endfor %}
-
-{% for port in ports.voip %}
-{% for port in range(port[0]+1, port[1]+1) %}
-interface {{ port_prefix }}{{ port }}
- description IP Phone port
- switchport mode access
- switchport access vlan {{ vlans['CAMPERS'].id }}
- switchport voice vlan {{ vlans['IPPHONES'].id }}
- switchport nonegotiate
- switchport block unicast
- ip access-group camper_v4_in in
-{% if "C3560" not in model %} ipv6 traffic-filter camper_v6_in in{% endif %}
-{% if "C3560" in model %} 
- small-frame violation-rate 1000
-{% else %}
-{# yes this is twice; some switches have different syntax #}
- small-frame violation rate 1000
-{% endif %}
- storm-control broadcast level 5.00 4.00
- storm-control multicast level 50.00 40.00
- storm-control action shutdown
- no vtp
-{% if "C3560" not in model %}
- lldp transmit
- lldp receive
-{% endif %}
- spanning-tree portfast
- spanning-tree bpdufilter disable
- spanning-tree bpduguard enable
- ip verify source
- switchport port-security
  switchport port-security maximum 6
- switchport port-security aging time 1
- switchport port-security aging type inactivity
- load-interval 30
- no shutdown
+{% include 'interface-defaults' with context %}
 {% endfor %}
 {% endfor %}
-
+!
+! voice ports
+!
+{% for range in ports.voice.ranges %}
+default interface range {{ range }}
+interface range {{ range }}
+ description IP Phone port with {{ ports.voice.access_vlan }} access VLAN
+ switchport mode access
+ switchport access vlan {{ vlans[ports.voice.access_vlan].id }}
+ switchport voice vlan {{ vlans['ipphones'].id }}
+ switchport block unicast
+ power inline auto
+{% include 'interface-lldp' with context %}
+{% include 'interface-security' with context %}
+ switchport port-security maximum 6
+{% include 'interface-defaults' with context %}
+{% endfor %}
+!
+! WiFi AP ports
+!
+{% for range in ports.wifi.ranges %}
+default interface range {{ range }}
+interface range {{ range }}
+ description WiFi downlink port
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan {{ vlans[ports.wifi.native_vlan].id }}
+ switchport trunk allowed vlan {% for vlan in ports.wifi.tagged_vlans %}
+{{comma()}}{{vlans[vlan].id}}
+{%endfor%}
+ power inline auto
+{% include 'interface-lldp' with context %}
+{% include 'interface-security' with context %}
+ switchport port-security maximum 64
+{% include 'interface-defaults' with context %}
+{% endfor %}
+!
+! uplinks and downlinks
+!
 {% for link in links %}
-
-{% if link.dir == "up" %}
-! {{ link.dir }}link to {{ link.to }}
-
+!!
+!! {{ link.dir }}link to {{ link.to }}
+!!
 {% for port in link.ports %}
-
-interface {{ port[0] }}
- description Uplink to {{ link.to }} port {{ port[1] }}
+{% if link.channel_group is not defined %}
+!!! {{link.dir}}link is not member of an LACP etherchannel
+{% else %}
+!!! LACP member interfaces for Po{{link.channel_group}}
+{% endif %}
+interface range {{ port }}
+ description {{ link.dir}}link to {{ link.to }}
+{% if switches.fixed_speed_lacp_links is defined and switches.fixed_speed_lacp_links is sameas true %}
+ speed 100
  speed 1000
  duplex full
  full-duplex ! different syntax for some switches
+{% endif %}
+{% include 'interface-lldp' with context %}
+{% include 'interface-defaults' with context %}
+{% if link.channel_group is defined %}
  channel-group {{ link.channel_group }} mode active
- load-interval 30
- cdp enable
-{% if "C3560" not in model %}
- lldp receive
- lldp transmit
+{% else %}
+{% include 'lacp-link-settings' with context %}
 {% endif %}
- no shutdown
-
-{% endfor %}
-
+{% if link.channel_group is defined %}
+!!! LACP Port-Channel interface
 interface Port-channel{{ link.channel_group }}
- description Uplink to {{ link.to }}
- switchport trunk encapsulation dot1q
- switchport mode trunk
- switchport trunk allowed vlan {{ vlans | json_query('*.id') | join (',')}}
- ip arp inspection trust
- ip dhcp snooping trust
- load-interval 30
- no shutdown
-
-{% endif %}{# Dir == up #}
-
-{% if link.dir == "down" %}
-! {{ link.dir }}link to {{ link.to }}
-
-{% for port in link.ports %}
-
-interface {{ port[0] }}
- description Downlink to {{ link.to }} port {{ port[1] }}
- speed 1000
- duplex full
- full-duplex ! different syntax for some switches
- channel-group {{ link.channel_group }} mode active
- load-interval 30
- cdp enable
-{% if "C3560" not in model %}
- lldp receive
- lldp transmit
-{% endif %}
- no shutdown
-
-{% endfor %}
-
-interface Port-channel{{ link.channel_group }}
- description Downlink to {{ link.to }}
- switchport trunk encapsulation dot1q
- switchport mode trunk
- switchport trunk allowed vlan {{ vlans | json_query('*.id') | join (',')}}
- ip arp inspection trust
- ip dhcp snooping trust
- load-interval 30
- no shutdown
-
+ description {{ link.dir }}link to {{ link.to }}
+{% include 'lacp-link-settings' with context %}
+{% include 'interface-defaults' with context %}
 {% endif %}
 {% endfor %}
-
+{% endfor %}
+!
 ip classless
 no ip http server
 no ip http secure-server
-
-! ssh
-no ip access-list standard 22
-ip access-list standard 22
- permit 78.158.92.196 ! david
- permit 77.73.148.52 ! david
- permit 91.209.244.43 ! jasper
- permit 151.216.134.0 0.0.1.255    ! noc wired + wireless
- permit 78.158.87.0 0.0.0.63 ! noc servers
- deny any log
-
-! ntp
-no ip access-list standard 23
-ip access-list standard 23
- permit host 78.158.87.11
- permit host 78.158.87.12
- deny any log
-
-! snmp
-no ip access-list standard 61
-ip access-list standard 61
- permit 151.216.134.0 0.0.1.255    ! noc wired + wireless
- permit 78.158.87.0 0.0.0.63 ! noc servers
- deny any log
-
+{% include 'general-ssh' with context %}
+{% include 'general-snmp' with context %}
+{% include 'general-ntp' with context %}
 ! deny all
 no ip access-list standard 99
 ip access-list standard 99
  deny any log
-
-no ip access-list extended artnetv4_in
-ip access-list extended artnetv4_in
-  permit ip 192.168.0.0 0.0.3.255 any
-  permit udp any any eq bootps
-{% if "C2950" not in model -%}
-  deny ip any any log-input
+!
+! general access port access-lists
+!
+{% for class in ports.access %}
+no ip access-list {{ acl[class].type }} {{class}}_v4_in
+ip access-list {{ acl[class].type }} {{class}}_v4_in
+{% if acl[class].list_v4 is defined %}
+{% for ace in acl[class].list_v4 %}
+ {{ ace }}
+{% endfor %}
 {% else %}
-{# fix the access list here #}
-! hello 2950 fixes here
-  deny ip any any
-{%- endif %}
-
-{% if ports.camper %}
-no ip access-list extended camper_v4_in
-ip access-list extended camper_v4_in
-{% set bn = "%d/%d" | format( base_network_address | ipaddr('address') | ipaddr('int') + vlans['CAMPERS'].subnet_offset*(base_network_size_multiplier*4*4), 32-vlans['CAMPERS'].subnet_size) %}
- permit ip {{ bn | ipaddr('address') }} {{ bn | ipaddr('netmask') }} any
+ permit ip {{ vlans[class].subnet | ipaddr('network') }} {{ ( 2**32 - 1 - vlans[class].subnet | ipaddr('netmask') | ipaddr('int') ) | ipaddr }} any
  permit udp any any eq 67
-{% if "C2950" not in model -%}
  deny   ip any any log-input
-{% else %}
-{# fix the access list here #}
-! hello 2950 fixes here
- deny ???
 {% endif %}
-
-{% if "C3560" not in model -%}
+{% endfor %}
+{% if flags is defined and "ipv6" in flags %}
 no ipv6 access-list camper_v6_in
 ipv6 access-list camper_v6_in
  permit ipv6 {# mycampervlan["ipv6-subnet"] #} any
  deny ipv6 any any log-input
 {%- endif %}
-{% endif %}
-
-snmp-server community {{ snmp.community.ro }} RO 61
-snmp-server location EMF
-snmp-server contact EMF NOC
-snmp-server ifindex persist
-snmp ifmib ifindex persist ! different syntax for some switches
-
+!
 banner motd ^
                      __,--'\
-               __,--'    :. \.
+ Camp++ 0x7e3  __,--'    :. \.
           _,--'              \'.
          /|\       '          \ '.
         / | \        ':        \  '/
        / '|  \        ':.       \
-      / , |   \ www.emfcamp.org  \
-     /    |:   \              ':. \
+      / , |   \         '        \
+     /    |:   \          .   ':. \
     /| '  |     \ :.           _,-''.
   \' |,  / \   ' \ ':.     _,-'_|    '/
      '._;   \ .   \   '_,-'_,-'
    \'    '- .\_   |\,-'_,-'
                '--|_,''     $(hostname) ^
-
+!
 line con 0
  login local
+{% if switches.session_exec_timeouts %} 
  exec-timeout 30 0
+{% endif %}
  stopbits 1
  transport preferred none
 line vty 0 15
+{% if admin_networks.subnet_v4 is defined %}
  access-class 22 in
+{% endif %}
+{% if switches.session_exec_timeouts %} 
  exec-timeout 120 0
+{% endif %}
  login local
  transport preferred none
  transport input ssh
-
-ntp update-calendar
-ntp source {{ vlans['CAMPERS'].id }}
-ntp server {{ servers.ntp1 }}
-ntp access-group query-only 99
-ntp access-group serve 99
-ntp access-group peer 23
-ntp access-group serve-only 99
-
-logging source-interface Vlan132
-logging 78.158.87.14
-
-! Don't forget to crypto key generate rsa general-keys modulus 2048
+! logging
+logging source-interface Vlan{{vlans['switch_mgmt'].id}}
+{% for server in ip.log %}
+logging {{server}}
+{% endfor %}
+!
+! Don't forget to crypto key generate rsa general-keys label {{ inventory_hostname }}.{{ip.domain}} modulus 2048
 end

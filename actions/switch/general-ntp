@@ -1,0 +1,19 @@
+! --BEGIN NTP--
+! ACL for NTP
+no ip access-list standard 23
+ip access-list standard 23
+{% for server in ip.ntp %}
+ permit host {{ server }}
+{% endfor %}
+ deny any log
+!ntp update-calendar
+ntp source Vlan{{ vlans['switch_mgmt'].id }}
+{% for server in ip.ntp %}
+ntp server {{ server }}
+{% endfor %}
+ntp access-group query-only 99
+ntp access-group serve 99
+ntp access-group peer 23
+ntp access-group serve-only 99
+! --END NTP--
+

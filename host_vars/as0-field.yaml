@@ -1,0 +1,23 @@
+mgmt_addr_offset: 4
+model: c3560
+site_id: 0
+links:
+  - dir: up
+    to: cs0-klapka
+    ports:
+      - Gi0/1
+ports:
+  access:
+    camper:
+      ranges:
+        - Fa0/1-5
+  voice:
+    ranges:
+      - Fa0/6
+  wifi:
+    ranges:
+      - Fa0/7-8
+flags:
+  - lldp
+  - sha256shadow
+  - ssh_user_keys

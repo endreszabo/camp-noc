@@ -1,0 +1,8 @@
+! --BEGIN STP--
+spanning-tree mode pvst
+spanning-tree logging
+spanning-tree portfast bpduguard default
+spanning-tree etherchannel guard misconfig
+spanning-tree extend system-id
+! --END STP--
+
