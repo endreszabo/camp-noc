@@ -1,7 +1,7 @@
 ! --BEGIN IP--
 ip domain-name {{ ip.domain }}
 interface vlan{{ vlans['switch_mgmt'].id }}
- ip address {{ vlans['switch_mgmt'].subnet_v4 | next_nth_usable(mgmt_addr_offset-1) }} {{ vlans['switch_mgmt'].subnet_v4 | ipaddr('netmask') }}
+ ip address {{ vlans['switch_mgmt'].subnet_v4 | next_nth_usable(mgmt_addr_offset) }} {{ vlans['switch_mgmt'].subnet_v4 | ipaddr('netmask') }}
  no ip redirects
  no ip proxy-arp
  no ip route-cache

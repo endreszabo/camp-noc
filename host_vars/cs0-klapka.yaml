@@ -19,12 +19,16 @@ links:
   - dir: up
     to: rgw0-klapka
     ports:
-      - Gi0/1
+      - Gi0/2
 ports:
   access:
     camper:
       ranges:
         - Fa0/1-12
+        - Fa0/24
+    uplink:
+      ranges:
+        - Gi0/1
   voice:
     ranges:
       - Fa0/15-16

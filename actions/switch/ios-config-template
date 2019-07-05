@@ -1,3 +1,4 @@
+!!!
 !!! {{inventory_hostname }}
 !!! {{ansible_managed}}
 !!!
@@ -107,9 +108,8 @@ interface range {{ range }}
  switchport trunk encapsulation dot1q
  switchport mode trunk
  switchport trunk native vlan {{ vlans[ports.wifi.native_vlan].id }}
- switchport trunk allowed vlan {% for vlan in ports.wifi.tagged_vlans %}
-{{comma()}}{{vlans[vlan].id}}
-{%endfor%}
+ switchport trunk allowed vlan {% for vlan in ports.wifi.tagged_vlans %}{{comma()}}{{vlans[vlan].id}}{%endfor%}
+
  power inline auto
 {% include 'interface-lldp' with context %}
 {% include 'interface-security' with context %}
@@ -168,6 +168,7 @@ ip access-list standard 99
 ! general access port access-lists
 !
 {% for class in ports.access %}
+{% if acl[class] is defined %}
 no ip access-list {{ acl[class].type }} {{class}}_v4_in
 ip access-list {{ acl[class].type }} {{class}}_v4_in
 {% if acl[class].list_v4 is defined %}
@@ -178,6 +179,7 @@ ip access-list {{ acl[class].type }} {{class}}_v4_in
  permit ip {{ vlans[class].subnet | ipaddr('network') }} {{ ( 2**32 - 1 - vlans[class].subnet | ipaddr('netmask') | ipaddr('int') ) | ipaddr }} any
  permit udp any any eq 67
  deny   ip any any log-input
+{% endif %}
 {% endif %}
 {% endfor %}
 {% if flags is defined and "ipv6" in flags %}
