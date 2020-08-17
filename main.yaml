@@ -1,0 +1,6 @@
+---
+- hosts: camp-switches
+  gather_facts: False
+  roles:
+    - switches
+

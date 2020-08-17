@@ -1,6 +1,6 @@
 mgmt_addr_offset: 1
 model: c3550
-site_id: 0
+site_id: 64
 links:
   - dir: down
     to: as0-klapka

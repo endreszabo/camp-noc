@@ -108,7 +108,7 @@ interface range {{ range }}
  switchport trunk encapsulation dot1q
  switchport mode trunk
  switchport trunk native vlan {{ vlans[ports.wifi.native_vlan].id }}
- switchport trunk allowed vlan {% for vlan in ports.wifi.tagged_vlans %}{{comma()}}{{vlans[vlan].id}}{%endfor%}
+ switchport trunk allowed vlan {% for vlan in ports.wifi.tagged_vlans+[ports.wifi.native_vlan] %}{{comma()}}{{vlans[vlan].id}}{%endfor%}
 
  power inline auto
 {% include 'interface-lldp' with context %}
@@ -191,7 +191,7 @@ ipv6 access-list camper_v6_in
 !
 banner motd ^
                      __,--'\
- Camp++ 0x7e3  __,--'    :. \.
+ Camp++ 0x7e4  __,--'    :. \.
           _,--'              \'.
          /|\       '          \ '.
         / | \        ':        \  '/

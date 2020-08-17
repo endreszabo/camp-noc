@@ -1,0 +1,6 @@
+---
+- name: "Generate switch cofigs"
+  delegate_to: localhost
+  template:
+    src: '{{ ostype}}-config-template'
+    dest: 'files/configs/switches/{{ inventory_hostname }}'

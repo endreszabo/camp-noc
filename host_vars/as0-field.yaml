@@ -1,6 +1,6 @@
 mgmt_addr_offset: 4
 model: c3560
-site_id: 0
+site_id: 64
 links:
   - dir: up
     to: cs0-klapka
@@ -10,7 +10,10 @@ ports:
   access:
     camper:
       ranges:
-        - Fa0/1-5
+        - Fa0/1-4
+    urbarium:
+      ranges:
+        - Fa0/5
   voice:
     ranges:
       - Fa0/6

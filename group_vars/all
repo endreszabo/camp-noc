@@ -24,9 +24,13 @@ vlans:
   camper:
     id: 1000
     subnet_v4: 10.13.37.0/24
+    subnet_v6: 2a01:270:9047:13::/64
   havoc:
     id: 1064
     subnet_v4: 10.13.38.0/28
+  urbarium:
+    id: 3501
+    subnet_v4: 44.128.64.0/24
   wifi_mgmt:
     id: 1240
     subnet_v4: 44.128.67.192/28

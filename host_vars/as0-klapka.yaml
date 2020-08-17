@@ -1,6 +1,6 @@
 mgmt_addr_offset: 2
 model: c3750
-site_id: 0
+site_id: 64
 links:
   - dir: up
     to: cs0-klapka

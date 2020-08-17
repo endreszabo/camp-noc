@@ -31,13 +31,19 @@ ports:
   wifi:
     tagged_vlans:
       - camper
+      - urbarium
       - uplink
     native_vlan: wifi_mgmt
 acl:
   camper:
     type: extended
     list_v4:
-      - permit ip  44.128.0.0 255.255.0.0 any
+      - permit ip  10.13.37.0 255.255.255.0 any
       - permit udp any                    any eq 67
       - deny   ip  any                    any log-input
-
+  urbarium:
+    type: extended
+    list_v4:
+      - permit ip  44.128.64.0 255.255.255.0 any
+      - permit udp any                    any eq 67
+      - deny   ip  any                    any log-input
